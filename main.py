@@ -16,22 +16,6 @@ import uuid
 import base64
 import os
 
-def business_to_dict(b: Business) -> dict:
-    return {
-        "id": b.id,
-        "name": b.name,
-        "owner_name": b.owner_name,
-        "email": b.email,
-        "phone": b.phone,
-        "address": b.address,
-        "category": b.category,
-        "description": b.description,
-        "image_base64": b.image_base64,
-        "created_by": b.created_by,
-        "created_at": b.created_at.isoformat() if b.created_at else None,
-        "updated_at": b.updated_at.isoformat() if b.updated_at else None
-    }
-
 # --- Config ---
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production-12345678901234567890")
 ALGORITHM = "HS256"
@@ -80,6 +64,22 @@ class Business(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 Base.metadata.create_all(bind=engine)
+
+def business_to_dict(b: Business) -> dict:
+    return {
+        "id": b.id,
+        "name": b.name,
+        "owner_name": b.owner_name,
+        "email": b.email,
+        "phone": b.phone,
+        "address": b.address,
+        "category": b.category,
+        "description": b.description,
+        "image_base64": b.image_base64,
+        "created_by": b.created_by,
+        "created_at": b.created_at.isoformat() if b.created_at else None,
+        "updated_at": b.updated_at.isoformat() if b.updated_at else None
+    }
 
 # --- Security ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
