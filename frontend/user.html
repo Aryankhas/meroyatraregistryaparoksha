@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - Business Registry</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        header { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        h1 { color: #2c3e50; font-size: 1.8rem; }
+        .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #fff; padding: 5px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-tab { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-weight: 600; border-radius: 6px; color: #666; transition: all 0.2s; }
+        .nav-tab:hover { background: #f0f0f0; color: #333; }
+        .nav-tab.active { background: #3498db; color: #fff; }
+        .nav-tab:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-primary { background: #3498db; color: #fff; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; color: #fff; }
+        .btn-success:hover { background: #219653; }
+        .btn-danger { background: #e74c3c; color: #fff; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-secondary { background: #95a5a6; color: #fff; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .card h2 { color: #2c3e50; margin-bottom: 15px; font-size: 1.3rem; }
+        
+        .auth-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .auth-form input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }
+        .auth-form input[type="text"] { width: 200px; }
+        .auth-form input[type="password"] { width: 200px; }
+        .auth-form input[type="email"] { width: 250px; }
+        .user-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .user-badge { background: #e8f4fd; color: #3498db; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        
+        .search-box { margin-bottom: 20px; }
+        .search-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+        
+        .business-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .business-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; transition: transform 0.2s, box-shadow 0.2s; }
+        .business-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .business-image { width: 100%; height: 180px; object-fit: cover; border-radius: 6px; margin-bottom: 15px; background: #f0f0f0; }
+        .business-card h3 { color: #2c3e50; margin-bottom: 8px; font-size: 1.2rem; }
+        .business-card .category { display: inline-block; background: #e8f4fd; color: #3498db; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 12px; }
+        .business-card p { color: #666; margin-bottom: 8px; font-size: 0.9rem; }
+        .business-card .meta { color: #999; font-size: 0.8rem; }
+        .business-card .actions { display: flex; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        .business-card .actions .btn { flex: 1; padding: 8px; font-size: 0.8rem; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; overflow-y: auto; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: #fff; border-radius: 12px; padding: 30px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal h2 { margin-bottom: 20px; color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; font-family: inherit; }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .modal-actions .btn { min-width: 100px; }
+        
+        .image-upload { border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .image-upload:hover { border-color: #3498db; background: #f8f9fa; }
+        .image-upload.dragover { border-color: #27ae60; background: #e8f8ee; }
+        .image-preview { max-width: 100%; max-height: 200px; border-radius: 6px; margin-top: 15px; display: none; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state svg { width: 64px; height: 64px; margin-bottom: 15px; opacity: 0.5; }
+        
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 6px; color: #fff; font-weight: 600; z-index: 1001; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #27ae60; }
+        .toast.error { background: #e74c3c; }
+        .toast.warning { background: #f39c12; }
+        
+        .api-key-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-radius: 6px; margin-bottom: 10px; }
+        .api-key-info { display: flex; flex-direction: column; gap: 4px; }
+        .api-key-name { font-weight: 600; color: #2c3e50; }
+        .api-key-meta { font-size: 0.8rem; color: #999; }
+        .api-key-value { font-family: monospace; background: #2c3e50; color: #fff; padding: 8px 12px; border-radius: 4px; font-size: 0.85rem; word-break: break-all; max-width: 300px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; text-align: center; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; color: #3498db; }
+        .stat-card .label { color: #999; font-size: 0.9rem; margin-top: 5px; }
+        
+        @media (max-width: 600px) {
+            .header-actions { width: 100%; }
+            .form-row { grid-template-columns: 1fr; }
+            .auth-form input { width: 100%; }
+            .api-key-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 My Dashboard</h1>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">← Public Directory</a>
+                <a href="/admin" class="btn btn-secondary">Admin Panel →</a>
+            </div>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('businesses')">🏢 My Businesses</button>
+            <button class="nav-tab" onclick="switchTab('api-keys')">🔑 API Keys</button>
+        </div>
+
+        <div class="auth-section card" id="auth-section">
+            <h2>🔐 Authentication</h2>
+            <div id="auth-form" class="auth-form">
+                <input type="text" id="auth-user" placeholder="Username">
+                <input type="password" id="auth-pass" placeholder="Password">
+                <button class="btn btn-success" onclick="login()">Login</button>
+                <button class="btn btn-secondary" onclick="showRegister()">Register</button>
+            </div>
+            <div id="user-info" class="user-info" style="display:none;"></div>
+        </div>
+
+        <div id="businesses-tab">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>🏢 My Businesses</h2>
+                    <button class="btn btn-primary" onclick="openModal()">+ Add Business</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search my businesses..." oninput="debounce(searchBusinesses, 300)()">
+                </div>
+                <div id="business-grid" class="business-grid"></div>
+                <div id="empty-state" class="empty-state" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <p>No businesses yet. Click "+ Add Business" to create one.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="api-keys-tab" style="display:none;">
+            <div class="card">
+                <h2>🔑 API Keys</h2>
+                <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+                    <input type="text" id="api-key-name" placeholder="Key name (e.g., Mobile App)" style="flex:1; min-width:200px; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                    <input type="number" id="api-key-expires" placeholder="Expires in days (optional)" min="1" style="width:180px; padding:10px; border:1px solid #ddd; border-radius:6px;">
+                    <button class="btn btn-primary" onclick="createApiKey()">Generate Key</button>
+                </div>
+                <div id="api-keys-list"></div>
+            </div>
+        </div>
+
+        <div id="modal" class="modal-overlay" onclick="if(event.target===this) closeModal()">
+            <div class="modal">
+                <h2 id="modal-title">Add Business</h2>
+                <form id="business-form" onsubmit="submitBusiness(event)">
+                    <input type="hidden" id="business-id">
+                    <div class="form-group">
+                        <label>Business Name *</label>
+                        <input type="text" id="name" required placeholder="Enter business name">
+                    </div>
+                    <div class="form-group">
+                        <label>Owner Name *</label>
+                        <input type="text" id="owner_name" required placeholder="Enter owner name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="email" required placeholder="owner@business.com">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phone" placeholder="+91-9876543210">
+                        </div>
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <input type="text" id="category" required placeholder="e.g., Technology, Food, Retail" list="categories">
+                            <datalist id="categories"></datalist>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Address *</label>
+                        <textarea id="address" required placeholder="Full address"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" placeholder="Describe the business..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Business Image</label>
+                        <div class="image-upload" id="image-upload" onclick="document.getElementById('image-file').click()">
+                            <input type="file" id="image-file" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+                            <p>Click or drag & drop to upload image (max 5MB)</p>
+                            <p style="font-size:0.85rem; color:#999; margin-top:5px;">JPEG, PNG, GIF, WebP</p>
+                            <img id="image-preview" class="image-preview">
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const API_BASE = '';
+        let accessToken = null;
+        let myBusinesses = [];
+        let categories = [];
+        let editingBusinessId = null;
+        let imageBase64 = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('businesses-tab').style.display = 'none';
+            document.getElementById('api-keys-tab').style.display = 'none';
+            event.target.classList.add('active');
+            if (tab === 'businesses') document.getElementById('businesses-tab').style.display = 'block';
+            else if (tab === 'api-keys') {
+                document.getElementById('api-keys-tab').style.display = 'block';
+                loadApiKeys();
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('auth-user').value;
+            const password = document.getElementById('auth-pass').value;
+            if (!username || !password) return showToast('Enter credentials', 'error');
+            
+            try {
+                const res = await fetch(API_BASE + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                accessToken = data.access_token;
+                updateAuthUI(data.user);
+                showToast('Logged in successfully');
+                await loadMyData();
+            } catch (e) {
+                showToast('Login failed: ' + e.message, 'error');
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('auth-user').value;
+            const password = document.getElementById('auth-pass').value;
+            const email = prompt('Enter email:');
+            if (!username || !password || !email) return showToast('All fields required', 'error');
+            
+            try {
+                const res = await fetch(API_BASE + '/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                accessToken = data.access_token;
+                updateAuthUI(data.user);
+                showToast('Registered & logged in');
+                await loadMyData();
+            } catch (e) {
+                showToast('Registration failed: ' + e.message, 'error');
+            }
+        }
+
+        function showRegister() {
+            if (confirm('Register new account?')) register();
+        }
+
+        function logout() {
+            accessToken = null;
+            document.getElementById('auth-form').style.display = 'flex';
+            document.getElementById('user-info').style.display = 'none';
+            document.getElementById('auth-user').value = '';
+            document.getElementById('auth-pass').value = '';
+            myBusinesses = [];
+            renderMyBusinesses([]);
+        }
+
+        function updateAuthUI(user) {
+            document.getElementById('auth-form').style.display = 'none';
+            document.getElementById('user-info').style.display = 'flex';
+            document.getElementById('user-info').innerHTML = `
+                <span class="user-badge">👤 ${user.username}</span>
+                <button class="btn btn-secondary" onclick="logout()" style="padding:5px 10px;font-size:0.8rem;">Logout</button>
+            `;
+        }
+
+        function authHeaders() {
+            return accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {};
+        }
+
+        async function apiGet(endpoint) {
+            const res = await fetch(API_BASE + endpoint, { headers: authHeaders() });
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        }
+
+        async function apiPost(endpoint, data) {
+            const res = await fetch(API_BASE + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        }
+
+        async function apiPut(endpoint, data) {
+            const res = await fetch(API_BASE + endpoint, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        }
+
+        async function apiDelete(endpoint) {
+            const res = await fetch(API_BASE + endpoint, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        }
+
+        async function loadMyData() {
+            await Promise.all([loadMyBusinesses(), loadCategories()]);
+        }
+
+        async function loadMyBusinesses() {
+            try {
+                const data = await apiGet('/api/businesses');
+                myBusinesses = data.businesses.filter(b => b.created_by === JSON.parse(atob(accessToken.split('.')[1])).sub);
+                renderMyBusinesses(myBusinesses);
+            } catch (e) {
+                showToast('Failed to load businesses: ' + e.message, 'error');
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const data = await apiGet('/api/categories');
+                categories = data.categories;
+                const datalist = document.getElementById('categories');
+                datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+            } catch (e) {
+                console.error('Failed to load categories', e);
+            }
+        }
+
+        async function loadApiKeys() {
+            try {
+                const keys = await apiGet('/api/auth/api-keys');
+                const list = document.getElementById('api-keys-list');
+                if (keys.length === 0) {
+                    list.innerHTML = '<p style="color:#999;">No API keys yet. Create one above.</p>';
+                    return;
+                }
+                list.innerHTML = keys.map(k => `
+                    <div class="api-key-item">
+                        <div class="api-key-info">
+                            <span class="api-key-name">${escapeHtml(k.name)}</span>
+                            <span class="api-key-meta">Created: ${formatDate(k.created_at)} ${k.last_used ? '• Last used: ' + formatDate(k.last_used) : ''} ${k.expires_at ? '• Expires: ' + formatDate(k.expires_at) : ''}</span>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteApiKey('${k.id}')">Delete</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Failed to load API keys', e);
+            }
+        }
+
+        function searchBusinesses() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            let filtered = myBusinesses;
+            if (search) filtered = filtered.filter(b => 
+                b.name.toLowerCase().includes(search) ||
+                (b.description || '').toLowerCase().includes(search) ||
+                b.category.toLowerCase().includes(search)
+            );
+            renderMyBusinesses(filtered);
+        }
+
+        function debounce(fn, delay) {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        function renderMyBusinesses(list) {
+            const grid = document.getElementById('business-grid');
+            const empty = document.getElementById('empty-state');
+            
+            if (list.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            
+            grid.innerHTML = list.map(b => `
+                <div class="business-card">
+                    ${b.image_base64 ? `<img src="${b.image_base64}" class="business-image" alt="${escapeHtml(b.name)}">` : ''}
+                    <h3>${escapeHtml(b.name)}</h3>
+                    <span class="category">${escapeHtml(b.category)}</span>
+                    <p><strong>Owner:</strong> ${escapeHtml(b.owner_name)}</p>
+                    <p><strong>Email:</strong> ${escapeHtml(b.email)}</p>
+                    ${b.phone ? `<p><strong>Phone:</strong> ${escapeHtml(b.phone)}</p>` : ''}
+                    <p><strong>Address:</strong> ${escapeHtml(b.address)}</p>
+                    ${b.description ? `<p>${escapeHtml(b.description)}</p>` : ''}
+                    <div class="meta">ID: ${b.id} • Created: ${formatDate(b.created_at)}</div>
+                    <div class="actions">
+                        <button class="btn btn-secondary" onclick="editBusiness('${b.id}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteBusiness('${b.id}', '${escapeHtml(b.name)}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(business = null) {
+            if (!accessToken) return showToast('Please login first', 'error');
+            
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('business-form');
+            const title = document.getElementById('modal-title');
+            const upload = document.getElementById('image-upload');
+            const preview = document.getElementById('image-preview');
+            
+            form.reset();
+            document.getElementById('business-id').value = '';
+            imageBase64 = null;
+            upload.style.display = 'block';
+            preview.style.display = 'none';
+            preview.src = '';
+            
+            if (business) {
+                title.textContent = 'Edit Business';
+                editingBusinessId = business.id;
+                document.getElementById('business-id').value = business.id;
+                document.getElementById('name').value = business.name;
+                document.getElementById('owner_name').value = business.owner_name;
+                document.getElementById('email').value = business.email;
+                document.getElementById('phone').value = business.phone || '';
+                document.getElementById('category').value = business.category;
+                document.getElementById('address').value = business.address;
+                document.getElementById('description').value = business.description || '';
+                if (business.image_base64) {
+                    imageBase64 = business.image_base64;
+                    preview.src = business.image_base64;
+                    preview.style.display = 'block';
+                    upload.style.display = 'none';
+                }
+            } else {
+                title.textContent = 'Add Business';
+                editingBusinessId = null;
+            }
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            editingBusinessId = null;
+            imageBase64 = null;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imageBase64 = e.target.result;
+                const preview = document.getElementById('image-preview');
+                preview.src = imageBase64;
+                preview.style.display = 'block';
+                document.getElementById('image-upload').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitBusiness(e) {
+            e.preventDefault();
+            if (!accessToken) return showToast('Please login first', 'error');
+            
+            const data = {
+                name: document.getElementById('name').value,
+                owner_name: document.getElementById('owner_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value || null,
+                category: document.getElementById('category').value,
+                address: document.getElementById('address').value,
+                description: document.getElementById('description').value || null,
+                image_base64: imageBase64
+            };
+            
+            try {
+                if (editingBusinessId) {
+                    await apiPut('/api/businesses/' + editingBusinessId, data);
+                    showToast('Business updated');
+                } else {
+                    await apiPost('/api/businesses', data);
+                    showToast('Business created');
+                }
+                closeModal();
+                await loadMyBusinesses();
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        function editBusiness(id) {
+            if (!accessToken) return showToast('Please login first', 'error');
+            const business = myBusinesses.find(b => b.id === id);
+            if (business) openModal(business);
+        }
+
+        async function deleteBusiness(id, name) {
+            if (!accessToken) return showToast('Please login first', 'error');
+            if (!confirm(`Delete "${name}"?`)) return;
+            
+            try {
+                await apiDelete('/api/businesses/' + id);
+                showToast('Business deleted');
+                await loadMyBusinesses();
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function createApiKey() {
+            const name = document.getElementById('api-key-name').value;
+            const expires = document.getElementById('api-key-expires').value;
+            if (!name) return showToast('Enter key name', 'error');
+            
+            try {
+                const data = await apiPost('/api/auth/api-keys', { name, expires_days: expires ? parseInt(expires) : null });
+                showToast('API Key created! Save it now - it won\'t be shown again.', 'warning');
+                document.getElementById('api-key-name').value = '';
+                document.getElementById('api-key-expires').value = '';
+                await loadApiKeys();
+                alert('Your API Key (save it now!):\n\n' + data.key);
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteApiKey(id) {
+            if (!confirm('Delete this API key?')) return;
+            try {
+                await apiDelete('/api/auth/api-keys/' + id);
+                showToast('API key deleted');
+                await loadApiKeys();
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(iso) {
+            return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        loadCategories();
+    </script>
+</body>
+</html>

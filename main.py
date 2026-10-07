@@ -496,6 +496,14 @@ async def admin_stats(admin = Depends(get_current_admin), db: Session = Depends(
 async def serve_frontend():
     return open("frontend/index.html").read()
 
+@app.get("/user", response_class=HTMLResponse)
+async def serve_user_dashboard():
+    return open("frontend/user.html").read()
+
+@app.get("/admin", response_class=HTMLResponse)
+async def serve_admin_panel():
+    return open("frontend/admin.html").read()
+
 # --- Run ---
 if __name__ == "__main__":
     import uvicorn
