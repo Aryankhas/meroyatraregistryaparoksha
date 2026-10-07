@@ -15,10 +15,6 @@ import secrets
 import uuid
 import base64
 import os
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 def business_to_dict(b: Business) -> dict:
     return {
@@ -101,13 +97,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.debug(f"Request: {request.method} {request.url} - Auth: {request.headers.get('Authorization')}")
-    response = await call_next(request)
-    logger.debug(f"Response: {response.status_code}")
-    return response
-
 # --- Dependency ---
 def get_db():
     db = SessionLocal()
@@ -143,58 +132,42 @@ async def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    print(f"DEBUG get_current_user: START", flush=True)
-    try:
-        auth_header = request.headers.get("Authorization")
-        print(f"DEBUG get_current_user: auth_header={auth_header}", flush=True)
-        if not auth_header or not auth_header.startswith("Bearer "):
-            print("DEBUG get_current_user: No Bearer token", flush=True)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
-        token = auth_header.split(" ")[1]
-        print(f"DEBUG get_current_user: token={token[:20]}...", flush=True)
-        
-        # Try JWT first
-        try:
-            print(f"DEBUG get_current_user: Decoding with SECRET_KEY={SECRET_KEY[:20]}...", flush=True)
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            print(f"DEBUG get_current_user: Payload={payload}", flush=True)
-            user_id = payload.get("sub")
-            if user_id:
-                user = db.query(User).filter(User.id == user_id).first()
-                print(f"DEBUG get_current_user: User={user}", flush=True)
-                if user and user.is_active:
-                    print(f"DEBUG get_current_user: Returning user", flush=True)
-                    return user
-        except JWTError as e:
-            print(f"DEBUG get_current_user: JWTError={e}", flush=True)
-            pass
-        
-        # Try API Key
-        api_keys = db.query(APIKey).all()
-        for ak in api_keys:
-            if verify_api_key(token, ak.key_hash):
-                user = db.query(User).filter(User.id == ak.user_id).first()
-                if user and user.is_active:
-                    ak.last_used = datetime.now(timezone.utc)
-                    db.commit()
-                    return user
-        
-        print("DEBUG get_current_user: All auth methods failed", flush=True)
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except Exception as e:
-        print(f"DEBUG get_current_user: EXCEPTION: {e}", flush=True)
-        import traceback
-        traceback.print_exc()
-        raise
+    
+    token = auth_header.split(" ")[1]
+    
+    # Try JWT first
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user and user.is_active:
+                return user
+    except JWTError:
+        pass
+    
+    # Try API Key
+    api_keys = db.query(APIKey).all()
+    for ak in api_keys:
+        if verify_api_key(token, ak.key_hash):
+            user = db.query(User).filter(User.id == ak.user_id).first()
+            if user and user.is_active:
+                ak.last_used = datetime.now(timezone.utc)
+                db.commit()
+                return user
+    
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 async def get_current_admin(user = Depends(get_current_user)):
     if not user.is_admin:
@@ -371,19 +344,8 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "user": {"id": user.id, "username": user.username, "email": user.email, "is_admin": user.is_admin}}
 
 @app.get("/api/auth/me")
-async def get_me(request: Request, user = Depends(get_current_user)):
-    print(f"DEBUG get_me: user={user}")
+async def get_me(user = Depends(get_current_user)):
     return {"id": user.id, "username": user.username, "email": user.email, "is_admin": user.is_admin}
-
-@app.get("/api/auth/test-dep")
-async def test_dep(user = Depends(get_current_user)):
-    print(f"DEBUG test_dep: user={user}")
-    return {"message": "Dependency works!", "user": user.username}
-
-@app.get("/api/auth/test-no-dep")
-async def test_no_dep(request: Request):
-    print(f"DEBUG test_no_dep called")
-    return {"auth_header": request.headers.get("Authorization")}
 
 # --- API Key Endpoints ---
 @app.post("/api/auth/api-keys", response_model=APIKeyResponse)
